@@ -225,4 +225,5 @@ Todas as rotas são protegidas. É necessário enviar um token de autenticação
             }
         ],
         "totalPrice": 900.00,
-        "orderDate": "2025
+        "orderDate": "2025"
+
