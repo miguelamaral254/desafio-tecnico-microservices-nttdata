@@ -11,29 +11,36 @@ O sistema é composto por quatro serviços independentes que trabalham em conjun
 3.  **Order Service:** Responsável por gerenciar os pedidos. Ele se comunica com o `Product Service` para obter informações dos produtos ao criar um novo pedido.
 4.  **API Gateway:** É o ponto de entrada único para todas as requisições externas. Ele é responsável por rotear as requisições para o serviço correto (`Product` ou `Order`) e por garantir a segurança, validando um token de autenticação.
 
-```mermaid
-graph TD
-    subgraph "Cliente Externo"
-        Client[Cliente API]
-    end
-
-    subgraph "Infraestrutura de Microsserviços"
-        Client --&gt; Gateway[API Gateway <br> Porta: 8300 <br> (Segurança e Roteamento)]
-        
-        Gateway --&gt; |/products/**| ProductSvc[Product Service <br> Porta: 8100]
-        Gateway --&gt; |/orders/**| OrderSvc[Order Service <br> Porta: 8200]
-        
-        ProductSvc --&gt; H2[(H2 Database)]
-        OrderSvc --&gt; |Busca produtos| ProductSvc
-        
-        subgraph "Service Discovery"
-            Eureka[Eureka Server <br> Porta: 8761]
-        end
-        
-        ProductSvc --&gt; |Registra-se| Eureka
-        OrderSvc --&gt; |Registra-se| Eureka
-        Gateway --&gt; |Registra-se| Eureka
-    end
+```Plaintext
+[ Cliente API ]
+      |
+      v
++-------------------------------------------------+
+| API Gateway (Porta 8300)                        |
+| - Validação de Token (Segurança)                |
+| - Roteamento:                                   |
+|   - /products/** -> [ Product Service ]         |
+|   - /orders/** -> [ Order Service ]             |
++-------------------------------------------------+
+      |                                   ^
+      | (Registra-se)                     | (Descobre Serviços)
+      v                                   |
++-------------------------------------------------+
+| Eureka Server (Porta 8761)                      |
+| - Registro e Descoberta de Serviços             |
++-------------------------------------------------+
+      ^                                   ^
+      | (Registra-se)                     | (Registra-se)
+      |                                   |
++----------------------+      +---------------------------+
+| Product Service      |      | Order Service             |
+| (Porta 8100)         |<-----| (Porta 8200)              |
+| - Gerencia Produtos  |      | - Gerencia Pedidos        |
+| - Acessa H2 Database |      | - Comunica com Product Svc|
++----------------------+      +---------------------------+
+      |
+      v
+[ H2 Database ]
 ````
 
 -----
